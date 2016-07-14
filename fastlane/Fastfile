@@ -1,0 +1,3 @@
+lane :test do
+  prepare_build_resources
+end
