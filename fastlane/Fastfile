@@ -1,3 +1,26 @@
 lane :test do
-  prepare_build_resources
+  # NOTES:
+  # - you will need to provide at least a keychain containing a valid identity (e.g. a certificate and private key)
+  # - - notice that you will not see a difference in the number of valid identities from ´security find-identity´, if the identity in the provided keychain is already in your normal keychains.
+  # - you can provide as many provisioning profiles as you wish
+
+  prepare_build_resources(
+    provisioning_profile_paths: ['build-resources/my.mobileprovision'],
+    keychain_path: 'build-resources/my.keychain',
+    keychain_password: '',
+    build: proc do |certificate, profiles|
+      if File.exist?(certificate)
+        UI.message("#{certificate} exists!")
+      end
+
+      profiles.each do |installed, original|
+        if File.exist?(installed)
+          UI.message("#{installed} exists!")
+        end
+      end
+
+      sh('security find-identity|wc -l')
+    end
+  )
+  sh('security find-identity|wc -l')
 end
