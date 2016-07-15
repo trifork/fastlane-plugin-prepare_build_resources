@@ -2,8 +2,9 @@ module Fastlane
   module Actions
     class PrepareBuildResourcesAction < Action
       def self.run(params)
-        @verbose = params[:verbose]
+        @debug_messages = []
         @dry_run = params[:dry_run]
+        @verbose = params[:verbose] || @dry_run
 
         keychain_path = self.validate_keychain(params)
         profile_paths = self.validate_profiles(params)
@@ -15,21 +16,19 @@ module Fastlane
         prepared_keychains = self.prepare_keychains(known_keychains, safe_keychain_path)
 
         safe_profile_paths.each do |dest, src|
-          UI.message "$ cp #{src} -> #{dest}" if @verbose
-          FileUtils.cp(src, dest) unless @dry_run
+          self.cp(src, dest)
         end
 
-        UI.message "$ cp #{keychain_path} -> #{safe_keychain_path}" if @verbose
-        FileUtils.cp(keychain_path, safe_keychain_path) unless @dry_run
+        self.cp(keychain_path, safe_keychain_path)
 
         self.execute(
           "security list-keychains -s #{prepared_keychains.shelljoin}",
-          proc {|_| self.safe_cleanup_resource(safe_keychain_path, safe_profile_paths, known_keychains) }
+          proc { |_| self.safe_cleanup_resource(safe_keychain_path, safe_profile_paths, known_keychains) }
         )
 
         self.execute(
           "security unlock-keychain -p #{params[:keychain_password].shellescape} #{safe_keychain_path.shellescape}",
-          proc {|_| self.safe_cleanup_resource(safe_keychain_path, safe_profile_paths, known_keychains) }
+          proc { |_| self.safe_cleanup_resource(safe_keychain_path, safe_profile_paths, known_keychains) }
         )
 
         begin
@@ -38,6 +37,8 @@ module Fastlane
         ensure
           self.safe_cleanup_resource(safe_keychain_path, safe_profile_paths, known_keychains)
         end
+
+        return @debug_messages.join("\n") if Helper.is_test?
       end
 
       # internal methods:
@@ -59,22 +60,20 @@ module Fastlane
       def self.reset_keychain(known_keychains, safe_keychain_path, safe_profile_paths)
         self.execute(
           "security list-keychains -s #{known_keychains.shelljoin}",
-          proc {|_| self.cleanup_files(safe_keychain_path, safe_profile_paths) }
+          proc { |_| self.cleanup_files(safe_keychain_path, safe_profile_paths) }
         )
       end
 
       def self.cleanup_files(safe_keychain_path, safe_profile_paths)
         begin
           safe_profile_paths.each do |file, _|
-            UI.message "$ rm #{file}" if @verbose
-            File.delete(file) unless @dry_run || !File.exist?(file)
+            self.rm(file)
           end
         rescue
         end
 
         begin
-          UI.message "$ rm #{safe_keychain_path}" if @verbose
-          File.delete(safe_keychain_path) unless @dry_run || !File.exist?(safe_keychain_path)
+          self.rm(safe_keychain_path)
         rescue
         end
       end
@@ -146,14 +145,27 @@ module Fastlane
       end
 
       def self.execute(command, error_callback = nil)
+        @debug_messages.push("$ #{command}")
         output = ""
         if @dry_run
-          UI.message "$ #{command}" if @verbose
+          UI.message @debug_messages.last if @verbose
         else
           output = Fastlane::Actions.sh(command, log: @verbose, error_callback: error_callback)
         end
 
         output
+      end
+
+      def self.cp(src, dest)
+        @debug_messages.push("$ cp #{src} -> #{dest}")
+        UI.message @debug_messages.last if @verbose
+        FileUtils.cp(src, dest) unless @dry_run
+      end
+
+      def self.rm(file)
+        @debug_messages.push("$ rm #{file}")
+        UI.message @debug_messages.last if @verbose
+        File.delete(file) unless @dry_run || !File.exist?(file)
       end
 
       # Fastlane methods:
