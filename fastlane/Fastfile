@@ -1,7 +1,7 @@
 lane :test do
   # NOTES:
   # - you will need to provide at least a keychain containing a valid identity (e.g. a certificate and private key)
-  # - - notice that you will not see a difference in the number of valid identities from ´security find-identity´, if the identity in the provided keychain is already in your normal keychains.
+  # - - notice that you will not see a difference in the number of valid identities from 'security find-identity', if the identity in the provided keychain is already in your normal keychains.
   # - you can provide as many provisioning profiles as you wish
 
   prepare_build_resources(
