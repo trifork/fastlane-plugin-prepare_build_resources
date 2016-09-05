@@ -36,6 +36,7 @@ module Fastlane
             params[:build].call(safe_keychain_path, safe_profile_paths) unless @dry_run
           end
         rescue
+          raise
         ensure
           self.safe_cleanup_resource(safe_keychain_path, safe_profile_paths, known_keychains)
         end
