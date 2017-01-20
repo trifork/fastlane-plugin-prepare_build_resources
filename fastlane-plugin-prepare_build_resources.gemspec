@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = %q{jje@trifork.com}
 
   spec.summary       = %q{Prepares certificates and provisioning profiles for building and removes them afterwards.}
-  spec.homepage      = "https://github.com/CodeReaper/fastlane-plugin-prepare_build_resources"
+  spec.homepage      = "https://github.com/trifork/fastlane-plugin-prepare_build_resources"
   spec.license       = "Apache-2.0"
 
   spec.files         = Dir["lib/**/*"] + %w(README.md LICENSE)
