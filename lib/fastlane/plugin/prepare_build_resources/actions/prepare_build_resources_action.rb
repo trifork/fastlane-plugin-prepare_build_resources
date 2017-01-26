@@ -119,7 +119,9 @@ module Fastlane
           safe_path = nil
           loop do
             random_name = self.random_name(32)
-            safe_path = File.expand_path(File.join("~/Library/MobileDevice/Provisioning Profiles/", "prepare-build-resources-#{random_name}.mobileprovision"))
+            profile_path_install_dir = File.expand_path("~/Library/MobileDevice/Provisioning Profiles/")
+            FileUtils.mkdir_p(profile_path_install_dir)
+            safe_path = File.expand_path(File.join(profile_path_install_dir, "prepare-build-resources-#{random_name}.mobileprovision"))
             break unless safe_profiles.key?(safe_path)
           end
           safe_profiles[safe_path] = path
