@@ -31,6 +31,11 @@ module Fastlane
           proc { |_| self.safe_cleanup_resource(safe_keychain_path, safe_profile_paths, known_keychains) }
         )
 
+        self.execute(
+          "security set-keychain-settings -t #{params[:keychain_timeout]} -l #{safe_keychain_path.shellescape}",
+          proc { |_| self.safe_cleanup_resource(safe_keychain_path, safe_profile_paths, known_keychains) }
+        )
+
         begin
           Dir.chdir('fastlane') do
             params[:build].call(safe_keychain_path, safe_profile_paths) unless @dry_run
@@ -200,6 +205,12 @@ module Fastlane
                                description: "Password to the supplied keychain",
                                   optional: false,
                                       type: String),
+          FastlaneCore::ConfigItem.new(key: :keychain_timeout,
+                                  env_name: "PREPARE_BUILD_RESOURCES_KEYCHAIN_TIMEOUT",
+                               description: "Timeout for the keychain (specifying when it locks again)",
+                             default_value: 3600,
+                                  optional: true,
+                                      type: Integer),
           FastlaneCore::ConfigItem.new(key: :provisioning_profile_paths,
                                   env_name: "PREPARE_BUILD_RESOURCES_YOUR_PROVISIONING_PROFILE_PATHS",
                                description: "Paths to the provisioning profiles that need to be available while building",
