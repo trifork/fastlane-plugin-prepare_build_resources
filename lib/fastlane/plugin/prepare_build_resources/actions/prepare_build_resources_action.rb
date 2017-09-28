@@ -41,7 +41,7 @@ module Fastlane
             params[:build].call(safe_keychain_path, safe_profile_paths) unless @dry_run
           end
         rescue
-          raise
+          raise if params[:rethrow_errors]
         ensure
           self.safe_cleanup_resource(safe_keychain_path, safe_profile_paths, known_keychains)
         end
@@ -219,6 +219,12 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :verbose,
                                   env_name: "PREPARE_BUILD_RESOURCES_YOUR_VERBOSE",
                                description: "Print verbose information about what the plugin is doing, *NOTE* that this will print your keychain password as well",
+                             default_value: false,
+                                  optional: true,
+                                      type: TrueClass),
+          FastlaneCore::ConfigItem.new(key: :rethrow_errors,
+                                  env_name: "PREPARE_BUILD_RESOURCES_RETHROW_ERRORS",
+                               description: "If an error occurs, continue normal execution outside of the build block",
                              default_value: false,
                                   optional: true,
                                       type: TrueClass),
