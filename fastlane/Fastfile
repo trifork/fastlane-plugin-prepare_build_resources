@@ -4,23 +4,34 @@ lane :test do
   # - - notice that you will not see a difference in the number of valid identities from 'security find-identity', if the identity in the provided keychain is already in your normal keychains.
   # - you can provide as many provisioning profiles as you wish
 
+  # create empty keychain and dummy provisioning file
+	keychain_path = '/tmp/my.keychain'
+	profile_path = '/tmp/my.mobileprovision'
+
+	FileUtils.touch profile_path
+
+	system('security create-keychain -p mySecretPassword testing')
+  generated_path = File.expand_path("~/Library/Keychains/testing-db")
+  system("mv #{generated_path} #{keychain_path}")
+
+  # the magic
   prepare_build_resources(
-    provisioning_profile_paths: ['build-resources/my.mobileprovision'],
-    keychain_path: 'build-resources/my.keychain',
-    keychain_password: '',
+    provisioning_profile_paths: [profile_path],
+    keychain_path: keychain_path,
+    keychain_password: 'mySecretPassword',
     build: proc do |certificate, profiles|
-      if File.exist?(certificate)
-        UI.message("#{certificate} exists!")
-      end
+      UI.message("#{certificate} exists!") if File.exist?(certificate)
 
       profiles.each do |installed, original|
-        if File.exist?(installed)
-          UI.message("#{installed} exists!")
-        end
+        UI.message("#{installed} exists!") if File.exist?(installed)
       end
 
       sh('security find-identity|wc -l')
     end
   )
   sh('security find-identity|wc -l')
+
+  # clean up the generated files
+  FileUtils.rm profile_path
+  FileUtils.rm keychain_path
 end

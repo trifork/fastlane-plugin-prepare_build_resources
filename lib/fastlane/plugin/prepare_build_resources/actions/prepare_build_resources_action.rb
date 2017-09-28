@@ -37,7 +37,9 @@ module Fastlane
         )
 
         begin
-          Dir.chdir('fastlane') do
+          folder = '.'
+          folder = 'fastlane' if Dir.exist?('fastlane')
+          Dir.chdir(folder) do
             params[:build].call(safe_keychain_path, safe_profile_paths) unless @dry_run
           end
         rescue
@@ -59,9 +61,7 @@ module Fastlane
             self.cleanup_files(safe_keychain_path, safe_profile_paths)
           end
         )
-
         self.reset_keychain(known_keychains, safe_keychain_path, safe_profile_paths)
-
         self.cleanup_files(safe_keychain_path, safe_profile_paths)
       end
 

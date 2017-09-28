@@ -80,28 +80,41 @@ describe Fastlane::Actions::PrepareBuildResourcesAction do
 
     it "should move files around and not fail with shell commands mocked" do
       proof_path = '/tmp/my.proof'
-      keychain_path = '/tmp/my.keychain'
+      keychain_path = '/tmp/my.keychain-db'
       profile_path = '/tmp/my.mobileprovision'
 
-      FileUtils.touch keychain_path
       FileUtils.touch profile_path
+      FileUtils.rm keychain_path if File.exist? keychain_path
       FileUtils.rm proof_path if File.exist? proof_path
 
       allow(Fastlane::Actions::PrepareBuildResourcesAction).to receive(:known_keychains).and_return([])
       allow(Fastlane::Actions::PrepareBuildResourcesAction).to receive(:execute).and_return(nil)
 
-      runner = Fastlane::FastFile.new.parse("lane :test do
-          prepare_build_resources(
-            provisioning_profile_paths: ['#{profile_path}'],
-            keychain_path: '#{keychain_path}',
-            keychain_password: 'mySecretPassword',
-            build: proc do |cert, profiles|
-              system('touch #{proof_path}')
-            end
-          )
-      end").runner
+      system('security create-keychain -p mySecretPassword testing')
+      generated_path = File.expand_path("~/Library/Keychains/testing-db")
+      expect(File.exist?(generated_path)).to eq(true)
 
-      result = runner.execute(:test)
+      system("mv #{generated_path} #{keychain_path}")
+      expect(File.exist?(keychain_path)).to eq(true)
+
+      expect(Dir.exist?('fastlane')).to eq(true)
+
+      result = ""
+      Dir.chdir('..') do
+        runner = Fastlane::FastFile.new.parse("lane :test do
+            prepare_build_resources(
+              provisioning_profile_paths: ['#{profile_path}'],
+              keychain_path: '#{keychain_path}',
+              keychain_password: 'mySecretPassword',
+              rethrow_errors:true,
+              build: proc do |cert, profiles|
+                system('touch #{proof_path}')
+              end
+            )
+        end").runner
+
+        result = runner.execute(:test)
+      end
 
       FileUtils.rm keychain_path
       FileUtils.rm profile_path
